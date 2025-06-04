@@ -1,0 +1,7 @@
+
+{
+  "text_input_directory": "plain_text_chapters",
+  "audio_output_directory": "audio_output",
+  "tts_model_path": "en_US-lessac-medium.onnx",
+  "chunk_size_words": 500
+}

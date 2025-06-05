@@ -1,4 +1,3 @@
-````markdown
 # 📖 EPUB to Plain Text Converter
 
 This Python script extracts **chapters from an EPUB file** (already unzipped) and converts them from HTML into clean, readable plain text files — one per chapter.

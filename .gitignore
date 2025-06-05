@@ -1,0 +1,7 @@
+book/
+venv/
+__pycache__/
+*.txt
+*.wav
+*.onnx
+*.onnx.json

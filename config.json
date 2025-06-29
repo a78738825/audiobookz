@@ -2,6 +2,6 @@
 {
   "text_input_directory": "tmp",
   "audio_output_directory": "audio_output",
-  "tts_model_path": "en_US-lessac-medium.onnx",
+  "tts_model_path": "en_US-hfc_male-medium.onnx",
   "chunk_size_words": 500
 }

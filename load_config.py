@@ -4,8 +4,12 @@ import json
 with open("config.json", "r", encoding="utf-8") as f:
     config = json.load(f)
 
-# Expose clearly named config variables
+# Required
 TEXT_INPUT_DIR = config["text_input_directory"]
 AUDIO_OUTPUT_DIR = config["audio_output_directory"]
 TTS_MODEL_PATH = config["tts_model_path"]
-WORDS_PER_CHUNK = config["chunk_size_words"]
+
+# Optional
+WORDS_PER_CHUNK = config.get("chunk_size_words", 500)
+MAX_FILES = config.get("max_files", None)
+PIPER_EXECUTABLE_PATH = config.get("piper_executable_path", None)

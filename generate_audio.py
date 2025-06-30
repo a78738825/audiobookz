@@ -1,20 +1,36 @@
-import os
 import subprocess
 from pathlib import Path
 
-from load_config import AUDIO_OUTPUT_DIR, TEXT_INPUT_DIR, TTS_MODEL_PATH
+from load_config import (
+    AUDIO_OUTPUT_DIR,
+    MAX_FILES,
+    PIPER_EXECUTABLE_PATH,
+    TEXT_INPUT_DIR,
+    TTS_MODEL_PATH,
+)
 
 
 def generate_audio_from_text_files():
     input_path = Path(TEXT_INPUT_DIR)
     output_path = Path(AUDIO_OUTPUT_DIR)
     model_path = Path(TTS_MODEL_PATH).expanduser()
+    piper_executable = (
+        Path(PIPER_EXECUTABLE_PATH).expanduser()
+        if PIPER_EXECUTABLE_PATH
+        else "piper-tts"
+    )
 
     # Ensure output directory exists
     output_path.mkdir(parents=True, exist_ok=True)
 
-    # Get all .txt files in input directory
-    for txt_file in sorted(input_path.glob("*.txt")):
+    # Gather all .txt files
+    txt_files = sorted(input_path.glob("*.txt"))
+
+    # If a max file limit is set, apply it
+    if isinstance(MAX_FILES, int) and MAX_FILES > 0:
+        txt_files = txt_files[:MAX_FILES]
+
+    for txt_file in txt_files:
         output_filename = txt_file.stem + ".wav"
         output_file_path = output_path / output_filename
 
@@ -30,7 +46,7 @@ def generate_audio_from_text_files():
 
             process = subprocess.run(
                 [
-                    "piper-tts",
+                    str(piper_executable),
                     "--model",
                     str(model_path),
                     "--output_file",
@@ -42,12 +58,14 @@ def generate_audio_from_text_files():
             )
 
             if process.returncode != 0:
-                print(f"Error generating audio for {txt_file.name}: {process.stderr}")
+                print(
+                    f"❌ Error generating audio for {txt_file.name}:\n{process.stderr.strip()}"
+                )
             else:
-                print(f"Successfully created: {output_file_path.name}")
+                print(f"✅ Successfully created: {output_file_path.name}")
 
         except Exception as e:
-            print(f"Exception while processing {txt_file.name}: {e}")
+            print(f"⚠️ Exception while processing {txt_file.name}: {e}")
 
 
 if __name__ == "__main__":

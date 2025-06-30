@@ -1,7 +1,8 @@
-book/
+.env
 venv/
 __pycache__/
-*.txt
+**/*.txt
+!/*.txt
 *.wav
 *.onnx
 *.onnx.json

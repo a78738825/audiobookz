@@ -1,113 +1,197 @@
-# 📖 EPUB to Plain Text Converter
+# 📚 EPUB to Audiobook Converter
 
-This Python script extracts **chapters from an EPUB file** (already unzipped) and converts them from HTML into clean, readable plain text files — one per chapter.
+Convert `.epub` ebooks into clean text — then into spoken audio using local text-to-speech (TTS) with [Piper TTS](https://github.com/rhasspy/piper).
 
-It relies on a valid **table-of-contents HTML file** (`table-of-contents.html`) inside the `OEBPS/` directory of the unzipped EPUB.
+This project consists of:
 
----
-
-## 🚀 Features
-
-- Parses the **table of contents** from HTML and identifies chapter files.
-- Converts each chapter to plain text using `html2text`.
-- **Cleans up chapter titles** to create safe filenames (Windows/Linux compatible).
-- Saves all chapters in a `text_output/` folder by default.
+* 📝 `epub_to_text.py` – extracts plain text chapters from an EPUB file
+* 🔊 `generate_audio.py` – turns text chapters into `.wav` files using Piper
+* ⚙️ A flexible `config.json` to control everything
 
 ---
 
-## 📦 Requirements
+## ⚙️ Configuration
 
-Make sure you have the following Python module installed:
+All settings live in `config.json`:
+
+```json
+{
+  "text_input_directory": "tmp",
+  "audio_output_directory": "audio_output",
+  "tts_model_path": "models/en_US-hfc_male-medium.onnx",
+  "chunk_size_words": 500,
+  "max_files": 10,
+  "piper_executable_path": "/usr/bin/piper-tts"
+}
+```
+
+### Explanation of keys:
+
+| Key                      | Description                                                               |
+| ------------------------ | ------------------------------------------------------------------------- |
+| `text_input_directory`   | Folder where `.txt` files will be read from by the audio generator        |
+| `audio_output_directory` | Folder where `.wav` output will be saved                                  |
+| `tts_model_path`         | Path to your `.onnx` voice model                                          |
+| `chunk_size_words`       | (Currently unused) Reserved for future: splitting long chapters           |
+| `max_files`              | Limits how many `.txt` files get processed (e.g. 10 chapters at a time)   |
+| `piper_executable_path`  | Absolute path to your Piper binary — or leave unset to use system install |
+
+---
+
+## 💡 Why the `tmp/` Folder?
+
+To avoid overwhelming your system by processing *every chapter at once*, you can:
+
+1. Run `epub_to_text.py` to extract **all** chapter `.txt` files into `plain_text_chapters/`
+2. Copy just a **subset** (e.g., 10–15) into `tmp/`
+3. Set `"text_input_directory": "tmp"` in your config
+4. Run `generate_audio.py` to create audio only for those
+
+This gives you **manual control** over which chapters are processed.
+
+### 🔒 Future idea:
+
+A more elegant solution could support:
+
+* `include_files`: explicitly list chapters to include
+* `random_sample`: randomly select a few for preview
+* `skip_existing`: true (already implemented)
+
+---
+
+## 📦 Directory Structure (after use)
+
+```
+.
+├── config.json                  # All paths & behavior defined here
+├── epub_to_text.py              # Extracts chapter-wise text from .epub
+├── generate_audio.py            # Converts text to audio using Piper
+├── load_config.py               # Handles config parsing
+├── models/
+│   ├── en_US-hfc_male-medium.onnx
+│   └── en_US-hfc_male-medium.onnx.json
+├── plain_text_chapters/         # Full output of epub_to_text.py
+├── tmp/                         # Temp folder for selected chapters
+├── audio_output/                # Output folder for audio files
+├── requirements.txt             # Python dependencies
+└── venv/                        # (Optional) Python virtualenv
+```
+
+🟡 You're free to **rename**, **reorganize**, or **move** things — as long as `config.json` points to the correct locations.
+
+---
+
+## 🛠️ Setup
+
+### 1. Install Python dependencies
 
 ```bash
-pip install html2text
-````
-
----
-
-## 📁 Folder Structure Expected
-
-You should extract your EPUB file (it's just a ZIP!) and run the script against the folder that looks like this:
-
-```
-your-epub-folder/
-└── OEBPS/
-    ├── table-of-contents.html
-    ├── page-0.html
-    ├── page-1.html
-    └── ... other chapter files
+python3 -m venv venv
+pip install -r requirements.txt
 ```
 
 ---
 
-## 🧠 How It Works
+### 2. Install Piper (and download a model)
 
-1. It looks for a file called `table-of-contents.html` inside `OEBPS/`.
-2. Converts that file into markdown-like text.
-3. Parses the markdown links to get:
+You have **two main options** for using Piper:
 
-   * Chapter title
-   * HTML file name (e.g. `page-3.html`)
-4. Cleans the chapter title to make a safe filename (replacing spaces with underscores, etc).
-5. Converts the corresponding HTML chapter to plain text.
-6. Writes each chapter into its own `.txt` file in the `text_output/` folder.
+#### 🔧 Option A: System install
 
----
+Follow [Piper’s official instructions](https://github.com/rhasspy/piper#installation).
 
-## 📌 How to Run
+Example for **Arch Linux** (btw):
 
 ```bash
-python your_script.py
+paru -S piper-tts-bin
 ```
 
-You'll be prompted to enter the **path to the extracted EPUB folder**, like:
+Once installed, the binary will likely be available globally as `piper-tts`.
 
-```
-Enter path to extracted EPUB folder: my-books/The-Hobbit/
-```
+#### 📦 Option B: Download release binary manually
 
-Make sure `my-books/The-Hobbit/OEBPS/table-of-contents.html` exists!
+If you don’t want to install Piper system-wide:
+
+1. Visit the [Piper Releases](https://github.com/rhasspy/piper/releases) page
+
+2. Download the appropriate binary archive for your OS (e.g. `piper-linux-x86_64.tar.gz`)
+
+3. Extract it anywhere (e.g. in your project under `./bin/`):
+
+   ```bash
+   mkdir -p bin
+   tar -xvf piper-linux-x86_64.tar.gz -C bin/
+   ```
+
+4. Update `config.json`:
+
+   ```json
+   "piper_executable_path": "bin/piper"
+   ```
+
+Now the script will use your local binary instead of requiring a global installation.
 
 ---
 
-## 📂 Output
+### ✅ Also download a voice model
 
-All `.txt` files will be saved in a folder named:
+You’ll need to download a `.onnx` model file (and its `.json` config) for the voice you'd like.
 
+Example:
+
+* Model: `en_US-hfc_male-medium.onnx`
+* Config: `en_US-hfc_male-medium.onnx.json`
+* Place both in your `models/` directory
+* Set the path in `config.json`:
+
+```json
+"tts_model_path": "models/en_US-hfc_male-medium.onnx"
 ```
-text_output/
-├── Chapter_1_A_Long_Expected_Party.txt
-├── Chapter_2_Roast_Mutton.txt
-└── ... and so on
-```
+
+Make sure both files are side by side, as Piper expects the `.json` config next to the model unless told otherwise.
 
 ---
 
-## 🛠 Customizing
+## 🚀 Usage
 
-* Change the `output_dir="text_output"` argument in `main()` or `run_conversion()` if you want the output elsewhere.
-* The `sanitize_filename()` function handles all the cleanup to make filenames safe. Modify it if needed.
-
----
-
-## 🧹 Cleanup Tips
-
-You can zip the final text files or copy them into your note-taking tool, e-reader, or backup archive.
-
----
-
-## 💡 Bonus
-
-If you're unsure how to unzip an EPUB:
+### Step 1: Convert EPUB to Text
 
 ```bash
-unzip my-book.epub -d my-book/
+python epub_to_text.py
 ```
+
+➡️ Prompts for an `.epub` file
+➡️ Outputs `.txt` chapters to `plain_text_chapters/`
 
 ---
 
-## 📬 Questions?
+### Step 2: Convert Text to Audio
 
-This script was written to be **simple, readable, and robust**, but if you're lost or need enhancements, feel free to tweak it or ask for help.
+Make sure `text_input_directory` is set (e.g. to `tmp/` or `plain_text_chapters/`) in `config.json`, then:
 
-Happy reading! 🌟
+```bash
+python generate_audio.py
+```
+
+➡️ Converts all `.txt` files (up to `max_files`)
+➡️ Saves `.wav` files in `audio_output/`
+➡️ Skips already existing files
+
+---
+
+## 📘 FAQ
+
+**Q: Can I use a custom path to Piper binary?**
+✅ Yes. Just set `piper_executable_path` in `config.json`.
+
+**Q: Can I limit how many chapters get processed?**
+✅ Use `max_files` or manually copy files to `tmp/`.
+
+**Q: Can I rename folders and still run the scripts?**
+✅ Absolutely — just update the paths in `config.json`.
+
+---
+
+## 📜 License
+
+MIT — do whatever you want, but attribution is appreciated.

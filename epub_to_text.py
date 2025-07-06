@@ -1,8 +1,10 @@
-import os
 import re
+from pathlib import Path
 
 from bs4 import BeautifulSoup
 from ebooklib import epub
+
+from load_config import CHAPTER_OUTPUT_DIR
 
 
 def sanitize_filename(name):
@@ -57,7 +59,7 @@ def extract_chapter_text(content_item):
     return "\n\n".join(lines)
 
 
-def convert_epub(epub_path, output_dir="plain_text_chapters"):
+def convert_epub(epub_path, output_dir=CHAPTER_OUTPUT_DIR):
     """
     Converts an EPUB book into plain text files — one per chapter.
 
@@ -70,15 +72,18 @@ def convert_epub(epub_path, output_dir="plain_text_chapters"):
         - Extract text and save to a .txt file
 
     Args:
-        epub_path (str): Path to the .epub file to convert
-        output_dir (str): Directory where text files will be saved
+        epub_path (Path or str): Path to the .epub file to convert
+        output_dir (Path or str, optional): Directory where text files will be saved.
+            Defaults to value from config.json ("chapter_output_directory").
     """
 
     # Load the EPUB book into memory using ebooklib
-    book = epub.read_epub(epub_path)
+    book = epub.read_epub(str(epub_path))
 
     # Ensure the output folder exists to save chapter text files
-    os.makedirs(output_dir, exist_ok=True)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"📁 Saving extracted chapters to: {output_dir}")
 
     # EPUB TOC (table of contents) is a list of `Link` objects or nested tuples
     for toc_entry in book.toc:
@@ -122,7 +127,7 @@ def convert_epub(epub_path, output_dir="plain_text_chapters"):
         plain_text = extract_chapter_text(content_item)
 
         # Build the output path for the .txt file (one per chapter)
-        output_path = os.path.join(output_dir, f"{safe_title}.txt")
+        output_path = output_dir / f"{safe_title}.txt"
 
         # Write the plain text content to a UTF-8 encoded file
         with open(output_path, "w", encoding="utf-8") as file:
@@ -133,10 +138,10 @@ def convert_epub(epub_path, output_dir="plain_text_chapters"):
 
 if __name__ == "__main__":
     # Prompt the user to enter the path to the EPUB file
-    epub_file_path = input("Enter path to .epub file: ").strip()
+    epub_file_path = Path(input("Enter path to .epub file: ").strip())
 
     # Validate the file path: must not be empty and must exist as a file
-    if not epub_file_path or not os.path.isfile(epub_file_path):
+    if not epub_file_path.is_file():
         print("❌ Invalid EPUB file path. Exiting.")
         exit(1)
 

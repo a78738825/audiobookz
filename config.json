@@ -1,5 +1,6 @@
 
 {
+  "chapter_output_directory": "tmp",
   "text_input_directory": "tmp",
   "audio_output_directory": "audio_output",
   "tts_model_path": "models/en_US-hfc_male-medium.onnx",
